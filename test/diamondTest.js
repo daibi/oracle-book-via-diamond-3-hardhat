@@ -10,6 +10,7 @@ const {
 const { deployDiamond } = require('../scripts/deploy.js')
 
 const { assert } = require('chai')
+const { ethers } = require('hardhat')
 
 describe('DiamondTest', async function () {
   let diamondAddress
@@ -171,6 +172,41 @@ describe('DiamondTest', async function () {
     assert.sameMembers(result, getSelectors(test1Facet).get(functionsToKeep))
   })
 
+  it('should add FaithfulFacet function', async () => {
+    const FaithfulFacet = await ethers.getContractFactory('FaithfulFacet')
+    const faithfulFacet = await FaithfulFacet.deploy()
+    await faithfulFacet.deployed()
+    addresses.push(faithfulFacet.address)
+    const selectors = getSelectors(faithfulFacet)
+    tx = await diamondCutFacet.diamondCut(
+      [{
+        facetAddress: faithfulFacet.address,
+        action: FacetCutAction.Add,
+        functionSelectors: selectors
+      }],
+      ethers.constants.AddressZero, '0x', { gasLimit: 800000 })
+      if (!receipt.status) {
+        throw Error(`Diamond upgrade failed: ${tx.hash}`)
+      }
+      result = await diamondLoupeFacet.facetFunctionSelectors(faithfulFacet.address)
+      assert.sameMembers(result, selectors)
+  })
+
+  it('should test Faithful mint & totalSupply', async () => {
+    const faithfulFacet = await ethers.getContractAt('FaithfulFacet', diamondAddress)
+    // total supply before mint
+    let totalSupply_ = await faithfulFacet.totalSupply()
+    assert.equal(totalSupply_, 0);
+
+    // mint execution
+    const [_, addr1] = await ethers.getSigners();
+    await faithfulFacet.mint(addr1.address);
+
+    // total supply after mint
+    totalSupply_ = await faithfulFacet.totalSupply()
+    assert.equal(totalSupply_, 1);
+  })
+
   it('remove all functions and facets except \'diamondCut\' and \'facets\'', async () => {
     let selectors = []
     let facets = await diamondLoupeFacet.facets()
@@ -201,6 +237,7 @@ describe('DiamondTest', async function () {
     const diamondLoupeFacetSelectors = getSelectors(diamondLoupeFacet).remove(['supportsInterface(bytes4)'])
     const Test1Facet = await ethers.getContractFactory('Test1Facet')
     const Test2Facet = await ethers.getContractFactory('Test2Facet')
+    const FaithfulFacet = await ethers.getContractFactory('FaithfulFacet')
     // Any number of functions from any number of facets can be added/replaced/removed in a
     // single transaction
     const cut = [
@@ -223,6 +260,11 @@ describe('DiamondTest', async function () {
         facetAddress: addresses[4],
         action: FacetCutAction.Add,
         functionSelectors: getSelectors(Test2Facet)
+      },
+      {
+        facetAddress: addresses[5],
+        action: FacetCutAction.Add,
+        functionSelectors: getSelectors(FaithfulFacet)
       }
     ]
     tx = await diamondCutFacet.diamondCut(cut, ethers.constants.AddressZero, '0x', { gasLimit: 8000000 })
@@ -232,8 +274,8 @@ describe('DiamondTest', async function () {
     }
     const facets = await diamondLoupeFacet.facets()
     const facetAddresses = await diamondLoupeFacet.facetAddresses()
-    assert.equal(facetAddresses.length, 5)
-    assert.equal(facets.length, 5)
+    assert.equal(facetAddresses.length, 6)
+    assert.equal(facets.length, 6)
     assert.sameMembers(facetAddresses, addresses)
     assert.equal(facets[0][0], facetAddresses[0], 'first facet')
     assert.equal(facets[1][0], facetAddresses[1], 'second facet')
