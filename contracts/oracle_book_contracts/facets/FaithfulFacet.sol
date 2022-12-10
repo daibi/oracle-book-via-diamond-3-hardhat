@@ -1,17 +1,31 @@
 pragma solidity ^0.8.1;
 
 import { Counters } from "@openzeppelin/contracts/utils/Counters.sol";
-import { Modifiers } from '../libs/LibAppStorage.sol';
+import { Modifiers, RequestStatus } from '../libs/LibAppStorage.sol';
 import { LibFaithful } from '../libs/LibFaithful.sol';
-import { console } from 'hardhat/console.sol';
+import { VRFCoordinatorV2Interface } from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 
 contract FaithfulFacet is Modifiers {
+
+    uint8 REQUEST_SCENE_MAIN_NFT = 0;
 
     /**
      * total supply of currently minted Faithfuls
      */
     function totalSupply() external view returns (uint256 totalSupply_) {
         totalSupply_ = Counters.current(s.faithfulCounter);
+    }
+
+    /**
+     * get Faithful NFT via _tokenId
+     */
+    function getByTokenId(uint256 _tokenId) external view returns (
+                uint256 randomNumber,
+                uint8 status) 
+    {
+        require(_tokenId < this.totalSupply(), "getByTokenId: tokenId not exist!");
+        randomNumber = s.faithfuls[_tokenId].randomNumber;
+        status = s.faithfuls[_tokenId].status;
     }
 
     /***********************
@@ -27,9 +41,33 @@ contract FaithfulFacet is Modifiers {
 
         // mint execution
         LibFaithful.mint(_to, _newTokenId);
+
+        // request random number from chainlink
+        requestRandomWordForMainNFT(_newTokenId);
+
         // increment counter
-        console.logUint(Counters.current(s.faithfulCounter));
         Counters.increment(s.faithfulCounter);
-        console.logUint(Counters.current(s.faithfulCounter));
+    }
+
+    /**
+     * trigger VRF requesting process for _newTokenId Faithful NFT
+     */
+    function requestRandomWordForMainNFT(uint256 _newTokenId) internal returns (uint256 requestId) {
+        requestId = VRFCoordinatorV2Interface(s.vrfCoordinator).requestRandomWords(
+            s.keyHash,
+            s.s_subscriptionId,
+            s.requestConfirmations,
+            s.callbackGasLimit,
+            s.numWords
+        );
+
+        // record this request Id for the newly generated _newTokenId
+        s.s_requests[requestId] = RequestStatus({
+            exists: true,
+            fulfilled: false,
+            randomWords: new uint256[](0),
+            tokenId: _newTokenId,
+            scene: REQUEST_SCENE_MAIN_NFT
+        });
     }
 }

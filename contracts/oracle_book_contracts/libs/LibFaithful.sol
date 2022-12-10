@@ -1,6 +1,6 @@
 pragma solidity ^0.8.1;
 
-import { LibAppStorage, AppStorage, Faithful } from "./LibAppStorage.sol";
+import { LibAppStorage, AppStorage, Faithful, RequestStatus } from "./LibAppStorage.sol";
 import { LibERC721 } from "../../shared/libraries/LibERC721.sol";
 
 /*
@@ -79,5 +79,21 @@ library LibFaithful {
         s.ownerToFaithfulTokenIds[_to].push(_tokenId);
 
         emit LibERC721.Transfer(_from, _to, _tokenId);
+    }
+
+    /**
+     * render this faithful's born attributes
+     */
+    function renderFaithful(uint256 requestId, uint256[] memory randomWords) internal {
+        require(randomWords.length >= 1, "updateMainNFT: insufficient randomWords length");
+        AppStorage storage s = LibAppStorage.diamondStorage();
+
+        RequestStatus storage requestStatus = s.s_requests[requestId];
+
+        require(requestStatus.exists, "processRandomWord: requestId not exists");
+        
+        uint256 _tokenId = requestStatus.tokenId;
+        s.faithfuls[_tokenId].status = STATUS_RUNNING;
+        s.faithfuls[_tokenId].randomNumber = randomWords[0];
     }
 }

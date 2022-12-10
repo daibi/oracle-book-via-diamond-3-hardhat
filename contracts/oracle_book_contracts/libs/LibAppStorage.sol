@@ -1,6 +1,7 @@
 pragma solidity ^0.8.1;
 
 import { Counters } from "@openzeppelin/contracts/utils/Counters.sol";
+import { VRFCoordinatorV2Interface } from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 
 /* 
  * Storage Slot Defination In a Human Readable Format
@@ -15,6 +16,17 @@ import { Counters } from "@openzeppelin/contracts/utils/Counters.sol";
 
 uint256 constant MAX_FORTUNE_COOKIE_NUM = 3;
 uint256 constant NUMERIC_TRAITS_NUM = 16;
+
+/**
+ * chianlink VRF request status recorder
+ */
+struct RequestStatus {
+    bool fulfilled; // whether the request has been successfully fulfilled
+    bool exists; // whether a requestId exists
+    uint8 scene; // Usage for this requestId: 0-mainNFT; 1-fortuneCookie
+    uint256 tokenId; // request random number result used for certain tokenId
+    uint256[] randomWords;
+}
 
 /**
  * NFT main character: Faithful
@@ -45,6 +57,20 @@ struct Faithful {
     /** current status 0=NOT valid, 1=VRF Rending, 2=running */
     uint8 status;
     
+}
+
+/**
+ * chainlink VRF request status
+ */
+struct VRFRequestStatus {
+    /** whether the request has been successfully fulfilled */
+    bool fulfilled; 
+    /** whether a requestId exists */
+    bool exists; // 
+    /** For this implementation, 
+      * we only consume the first randomNumber returned from Chainlink, 
+      * therefore, we only record one randomNumber for each request status */
+    uint256 randomNumber;
 }
 
 /**
@@ -102,6 +128,9 @@ struct AppStorage {
 
     /** Counter for Faithful */
     Counters.Counter faithfulCounter;
+
+    /** chainlink subscription initialization flag */
+    bool chainlinkInitialized;
     
     /** Faithful indices */
     mapping(uint256 => Faithful) faithfuls;
@@ -124,6 +153,34 @@ struct AppStorage {
     /** Item type enumeration recorder */
     ItemType[] itemType;
 
+    mapping(uint256 => RequestStatus) s_requests; /* requestId --> requestStatus */
+
+    /** Version2 VRF coordinator */
+    VRFCoordinatorV2Interface COORDINATOR;
+
+    /** VRF subscription ID. */
+    uint64 s_subscriptionId;
+
+    /** VRF Coordinator address - it varies from different blockchain network */
+    address vrfCoordinator;
+
+    /** VRF keyhash - it varies from different blockchain network */
+    bytes32 keyHash;
+
+    // Depends on the number of requested values that you want sent to the
+    // fulfillRandomWords() function. Storing each word costs about 20,000 gas,
+    // so 100,000 is a safe default for this example contract. Test and adjust
+    // this limit based on the network that you select, the size of the request,
+    // and the processing of the callback request in the fulfillRandomWords()
+    // function.
+    uint32 callbackGasLimit;
+
+    // The default is 3, but you can set this higher.
+    uint16 requestConfirmations;
+
+    // number of rundom number retrieved from chainlink
+    uint32 numWords;
+
 }
 
 /**
@@ -143,5 +200,5 @@ contract Modifiers {
 
     AppStorage internal s;
 
-    
+
 }
