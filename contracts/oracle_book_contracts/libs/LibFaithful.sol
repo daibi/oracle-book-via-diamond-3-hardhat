@@ -1,7 +1,10 @@
 pragma solidity ^0.8.1;
 
 import { LibAppStorage, AppStorage, Faithful, RequestStatus } from "./LibAppStorage.sol";
+import { LibMath } from "./LibMath.sol";
 import { LibERC721 } from "../../shared/libraries/LibERC721.sol";
+import { LibConstant } from "./LibConstant.sol";
+import { SafeMath } from '@openzeppelin/contracts/utils/math/SafeMath.sol';
 
 /*
  * A 'Faithful' related library layer for common usage
@@ -9,10 +12,6 @@ import { LibERC721 } from "../../shared/libraries/LibERC721.sol";
  * @author: Ruofan
  */
 library LibFaithful {
-
-    uint8 constant STATUS_INVALID = 0;
-    uint8 constant STATUS_VRF_PENDING = 1;
-    uint8 constant STATUS_RUNNING = 2;
 
     /**
      * Mint a NEW Faithful.
@@ -42,7 +41,7 @@ library LibFaithful {
         faithful.owner = _to;
         faithful.mintTime = block.timestamp;
         // For Faithful's initialization, it should be waiting for the VRF determination
-        faithful.status = STATUS_VRF_PENDING;
+        faithful.status = LibConstant.STATUS_VRF_PENDING;
     }
 
     /**
@@ -82,7 +81,19 @@ library LibFaithful {
     }
 
     /**
-     * render this faithful's born attributes
+     * Render this faithful's born attributes
+     * 
+     * A faithful's born attributes are rendered in the following process:
+     * 
+     * 0）PRE: A Faithful has the following attributes, as recorded in numericTraits, currently only the first three slots are effective 
+     *      - SLOT 0: Attack
+     *      - SLOT 1: Defense
+     *      - SLOT 2: Fortune
+     * 1) A random word is received from chainlink subscription(VRF)
+     * 2）Once received the random word(denoted as R), this function can render faithful's born attributes as follow:
+     *      - SLOT 0(Attack): R % 10
+     *      - SLOT 1(Defense): (R / 10) % 10
+     *      - SLOT 2(Fortune): (R / (10^2)) % 10
      */
     function renderFaithful(uint256 requestId, uint256[] memory randomWords) internal {
         require(randomWords.length >= 1, "updateMainNFT: insufficient randomWords length");
@@ -93,7 +104,11 @@ library LibFaithful {
         require(requestStatus.exists, "processRandomWord: requestId not exists");
         
         uint256 _tokenId = requestStatus.tokenId;
-        s.faithfuls[_tokenId].status = STATUS_RUNNING;
+        s.faithfuls[_tokenId].status = LibConstant.STATUS_RUNNING;
         s.faithfuls[_tokenId].randomNumber = randomWords[0];
+
+        for (uint256 slotIdx; slotIdx < LibConstant.EFFECTIVE_TRAIT_SLOTS; slotIdx++) {
+            s.faithfuls[_tokenId].numericTraits[slotIdx] = uint8(SafeMath.mod(SafeMath.div(randomWords[slotIdx], LibMath.power(10, slotIdx)), 10));
+        }
     }
 }

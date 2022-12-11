@@ -3,6 +3,7 @@ pragma solidity ^0.8.1;
 import { Counters } from "@openzeppelin/contracts/utils/Counters.sol";
 import { Modifiers, RequestStatus } from '../libs/LibAppStorage.sol';
 import { LibFaithful } from '../libs/LibFaithful.sol';
+import { LibConstant } from '../libs/LibConstant.sol';
 import { VRFCoordinatorV2Interface } from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 
 contract FaithfulFacet is Modifiers {
@@ -21,11 +22,17 @@ contract FaithfulFacet is Modifiers {
      */
     function getByTokenId(uint256 _tokenId) external view returns (
                 uint256 randomNumber,
-                uint8 status) 
+                uint8 status,
+                uint8 attack,
+                uint8 defense,
+                uint8 fortune) 
     {
         require(_tokenId < this.totalSupply(), "getByTokenId: tokenId not exist!");
         randomNumber = s.faithfuls[_tokenId].randomNumber;
         status = s.faithfuls[_tokenId].status;
+        attack = s.faithfuls[_tokenId].numericTraits[LibConstant.ATTACK_SLOT];
+        defense = s.faithfuls[_tokenId].numericTraits[LibConstant.DEFENSE_SLOT];
+        fortune = s.faithfuls[_tokenId].numericTraits[LibConstant.FORTUNE_SLOT];
     }
 
     /***********************
@@ -37,6 +44,7 @@ contract FaithfulFacet is Modifiers {
      */
     function mint(address _to) external payable {
         require(_to != address(0), "FaithfulFacet: mint to zero address!");
+        require(s.chainlinkInitialized, "MainNFT: chainlink subscription config is not initialized!");
         uint256 _newTokenId = this.totalSupply();
 
         // mint execution
