@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import { Modifiers } from '../libs/LibAppStorage.sol';
 import { LibRandomWord } from '../libs/LibRandomWord.sol';
+import { console } from 'hardhat/console.sol';
 
 contract VRFFacet is Modifiers  {
 
@@ -23,7 +24,7 @@ contract VRFFacet is Modifiers  {
         s.numWords = numWords;
         
         s.chainlinkInitialized = true;
-
+        console.logBool(this.chainlinkInitialized());
     }
 
     /**
