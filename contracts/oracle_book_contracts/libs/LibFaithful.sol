@@ -13,6 +13,8 @@ import { SafeMath } from '@openzeppelin/contracts/utils/math/SafeMath.sol';
  */
 library LibFaithful {
 
+    event FaithfulRendered(address indexed owner, uint256 indexed tokenId, uint256 indexed requestId);
+    
     /**
      * Mint a NEW Faithful.
      * Once minted, this faithful is at VRF-pending status waiting for the VRF received from chainlink
@@ -108,7 +110,9 @@ library LibFaithful {
         s.faithfuls[_tokenId].randomNumber = randomWords[0];
 
         for (uint256 slotIdx; slotIdx < LibConstant.EFFECTIVE_TRAIT_SLOTS; slotIdx++) {
-            s.faithfuls[_tokenId].numericTraits[slotIdx] = uint8(SafeMath.mod(SafeMath.div(randomWords[slotIdx], LibMath.power(10, slotIdx)), 10));
+            s.faithfuls[_tokenId].numericTraits[slotIdx] = uint8(SafeMath.mod(SafeMath.div(randomWords[0], LibMath.power(10, slotIdx)), 10));
         }
+
+        emit FaithfulRendered(s.faithfuls[_tokenId].owner, _tokenId, requestId);
     }
 }

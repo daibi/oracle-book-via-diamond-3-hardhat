@@ -23,9 +23,9 @@ contract MockVRFCoordinator {
         uint32,
         uint32
     ) external returns (uint256 requestId) {
+        counter += 1;
         randomWord = counter;
         requestId = counter;
-        counter += 1;
         emit RandomWordsRequested(requestId, msg.sender);
     }
 
@@ -35,5 +35,9 @@ contract MockVRFCoordinator {
         randomWords[0] = randomWord;
         consumer.rawFulfillRandomWords(requestId, randomWords);
         emit RandomWordsFulfilled(requestId, true);
+    }
+
+    function getCounter() external view returns (uint256 currentCounter) {
+        currentCounter = counter;
     }
 }

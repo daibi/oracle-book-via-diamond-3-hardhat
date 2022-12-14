@@ -19,10 +19,12 @@ describe ('FaithfulFacetTest', async function() {
     let ownershipFacet
     let mockVRFCoordinator
     let libERC721Factory
+    let libFaithful
 
     before(async function () {
       diamondAddress = await deployDiamond()
       libERC721Factory = await ethers.getContractFactory('LibERC721')
+      libFaithful = await ethers.getContractFactory('LibFaithful')
       mockVRFCoordinator = await deployMockVRFCoordinator()
       diamondCutFacet = await ethers.getContractAt('DiamondCutFacet', diamondAddress)
       diamondLoupeFacet = await ethers.getContractAt('DiamondLoupeFacet', diamondAddress)
@@ -77,6 +79,14 @@ describe ('FaithfulFacetTest', async function() {
 
       // staus -- STATUS_RUNNING(1)
       assert.equal(status, 1)  
+    })
+
+    it('should call rawRandomFulfilled and render the Faithful', async () => {
+      let currentCounter = await mockVRFCoordinator.getCounter()
+
+      const [_, addr1] = await ethers.getSigners();
+      await expect(mockVRFCoordinator.fulfillRandomWords(currentCounter, diamondAddress))
+        .to.emit(libFaithful.attach(vrfFacet.address), 'FaithfulRendered').withArgs(addr1.address, 0, currentCounter)
     })
     
 })
