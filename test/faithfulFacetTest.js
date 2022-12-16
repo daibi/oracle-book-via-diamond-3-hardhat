@@ -19,10 +19,12 @@ describe ('FaithfulFacetTest', async function() {
     let ownershipFacet
     let mockVRFCoordinator
     let libERC721Factory
+    let libFaithful
 
     before(async function () {
       diamondAddress = await deployDiamond()
       libERC721Factory = await ethers.getContractFactory('LibERC721')
+      libFaithful = await ethers.getContractFactory('LibFaithful')
       mockVRFCoordinator = await deployMockVRFCoordinator()
       diamondCutFacet = await ethers.getContractAt('DiamondCutFacet', diamondAddress)
       diamondLoupeFacet = await ethers.getContractAt('DiamondLoupeFacet', diamondAddress)
@@ -75,8 +77,26 @@ describe ('FaithfulFacetTest', async function() {
       // check newly mint Faithful's status & born attribute
       const { randomNumber, status } = await faithfulFacet.getByTokenId(0);
 
-      // staus -- STATUS_RUNNING(1)
+      // staus -- STATUS_VRF_PENDING(1)
       assert.equal(status, 1)  
+    })
+
+    it('should call rawRandomFulfilled and render the Faithful', async () => {
+      let currentCounter = await mockVRFCoordinator.getCounter()
+
+      const [_, addr1] = await ethers.getSigners()
+      await expect(mockVRFCoordinator.fulfillRandomWords(currentCounter, diamondAddress))
+        .to.emit(libFaithful.attach(vrfFacet.address), 'FaithfulRendered').withArgs(addr1.address, 0, currentCounter)
+      
+      // check the newly rendered Faithful's attribute
+      const { randomNumber, status, attack, defense, fortune } = await faithfulFacet.getByTokenId(0);
+
+      // status -- STATUS_RUNNING(2)
+      assert.equal(status, 2)
+      assert.equal(attack, randomNumber % 10)
+      assert.equal(defense, (Math.trunc(randomNumber / 10) % 10))
+      assert.equal(fortune, (Math.trunc(randomNumber / 100) % 10))
+
     })
     
 })

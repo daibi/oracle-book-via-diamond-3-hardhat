@@ -10,9 +10,9 @@ library LibMath {
      */
     function power(uint256 base, uint256 exponent) internal returns (uint256 result) {
         if (exponent == 0) {
-            result = 1;
+            return 1;
         } else if (exponent == 1) {
-            result = base;
+            return base;
         } else {
             result = power(SafeMath.mul(base, base), SafeMath.div(exponent, 2));
         }
