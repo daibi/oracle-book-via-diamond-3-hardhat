@@ -1,6 +1,11 @@
 
 /* global ethers task */
 require('@nomiclabs/hardhat-waffle')
+require("dotenv").config()
+require("@nomiclabs/hardhat-ethers")
+require("hardhat-deploy")
+
+const key = ''
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -23,7 +28,19 @@ module.exports = {
   settings: {
     optimizer: {
       enabled: true,
-      runs: 200
+      runs: 1000000
     }
-  }
+  }, 
+  mocha: {
+    timeout: 90000
+  },
+  networks: {
+    hardhat: {
+      initialBaseFeePerGas: 0,
+      blockGasLimit: 18800000,
+    }
+  },
+  namedAccounts: {
+    deployer: 0
+  },
 }

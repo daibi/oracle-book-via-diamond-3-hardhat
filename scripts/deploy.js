@@ -32,7 +32,9 @@ async function deployDiamond () {
   console.log('Deploying facets')
   const FacetNames = [
     'DiamondLoupeFacet',
-    'OwnershipFacet'
+    'OwnershipFacet',
+    'FaithfulFacet',
+    'VRFFacet'
   ]
   const cut = []
   for (const FacetName of FacetNames) {
@@ -55,6 +57,7 @@ async function deployDiamond () {
   let receipt
   // call to init function
   let functionCall = diamondInit.interface.encodeFunctionData('init')
+  console.log('function call:', functionCall)
   tx = await diamondCut.diamondCut(cut, diamondInit.address, functionCall)
   console.log('Diamond cut tx: ', tx.hash)
   receipt = await tx.wait()
