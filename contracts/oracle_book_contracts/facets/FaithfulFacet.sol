@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.1;
 
 import { Counters } from "@openzeppelin/contracts/utils/Counters.sol";
@@ -44,7 +45,7 @@ contract FaithfulFacet is Modifiers {
      */
     function mint(address _to) external payable {
         require(_to != address(0), "FaithfulFacet: mint to zero address!");
-        require(s.chainlinkInitialized, "MainNFT: chainlink subscription config is not initialized!");
+        require(s.chainlinkInitialized, "FaithfulFacet: chainlink subscription config is not initialized!");
         uint256 _newTokenId = this.totalSupply();
 
         // mint execution

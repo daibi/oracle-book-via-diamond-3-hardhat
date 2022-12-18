@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.1;
 
 import { Counters } from "@openzeppelin/contracts/utils/Counters.sol";
@@ -74,6 +75,19 @@ struct VRFRequestStatus {
 }
 
 /**
+ * Fortune cookie
+ */
+struct FortuneCookie {
+    
+    /** the generation time of this fortune cookie */
+    uint40 generateTime;
+
+    /** encrypted data */
+    bytes encryptedData;
+
+}
+
+/**
  * Hexagram generated from the Oracal Book
  * May the Hexagram guide you!
  */
@@ -129,8 +143,14 @@ struct AppStorage {
     /** Counter for Faithful */
     Counters.Counter faithfulCounter;
 
+    /** Counter for Fortune Cookie */
+    Counters.Counter fortuneCookieCounter;
+
     /** chainlink subscription initialization flag */
     bool chainlinkInitialized;
+
+    /** Fortune cookie initilization flag */
+    bool fortuneCookieInitialized;
     
     /** Faithful indices */
     mapping(uint256 => Faithful) faithfuls;
@@ -152,6 +172,18 @@ struct AppStorage {
 
     /** Item type enumeration recorder */
     ItemType[] itemType;
+
+    /** Fortune cookie indices */
+    mapping(uint256 => FortuneCookie) fortuneCookies;
+
+    /** owner address to fortune cookie collections */
+    mapping(address => uint256[]) ownerToFortuneCookies;
+
+    /** owner address -> fortune cookie id -> index */
+    mapping(address => mapping(uint256 => uint256)) ownerFortuneCookieIdIndices;
+
+    /** time for fortune cookie becomes revealable (ms)*/
+    uint64 fortuneCookieMatureTime;
 
     mapping(uint256 => RequestStatus) s_requests; /* requestId --> requestStatus */
 
