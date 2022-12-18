@@ -176,6 +176,9 @@ struct AppStorage {
     /** Fortune cookie indices */
     mapping(uint256 => FortuneCookie) fortuneCookies;
 
+    /** Fortune cookie owner address */
+    mapping(uint256 => address) fortuneCookieOwner;
+
     /** owner address to fortune cookie collections */
     mapping(address => uint256[]) ownerToFortuneCookies;
 
@@ -184,6 +187,15 @@ struct AppStorage {
 
     /** time for fortune cookie becomes revealable (ms)*/
     uint64 fortuneCookieMatureTime;
+
+    /** owner address -> itemIds */
+    mapping(address => uint8[]) ownerItems;
+
+    /** owner address -> itemsId -> balance */
+    mapping(address => mapping(uint8 => uint256)) ownerItemBalance;
+
+    /** owner address -> item id -> item id index */
+    mapping(address => mapping(uint8 => uint256)) ownerItemIndices;
 
     mapping(uint256 => RequestStatus) s_requests; /* requestId --> requestStatus */
 

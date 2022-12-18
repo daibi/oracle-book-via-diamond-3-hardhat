@@ -12,6 +12,9 @@ library LibRandomWord {
 
     /**
      * process the random word received, will route into the execute via the recorded RequestStatus
+     * 
+     * @param requestId         chainlink VRF request id
+     * @param randomWords       generated random words result from chainlink VRF
      */
     function processRandomWord(uint256 requestId, uint256[] memory randomWords) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
