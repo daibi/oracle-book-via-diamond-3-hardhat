@@ -9,6 +9,7 @@ import { LibItem } from "./LibItem.sol";
 
 library LibFortuneCookie {
 
+    
     /**
      * check if given _fortuneCookieId is mature
      * 
@@ -46,6 +47,16 @@ library LibFortuneCookie {
         
         AppStorage storage s = LibAppStorage.diamondStorage();
         return s.fortuneCookieOwner[_fortuneCookieId];
+    }
+
+    /**
+     * mint new fortune cookie with encrypted words
+     * 
+     * @param _to                   target owner
+     * @param 
+     */
+    function mint(address _to, bytes calldata key) internal {
+
     }
 
     /**
