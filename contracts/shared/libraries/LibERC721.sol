@@ -1,9 +1,8 @@
 pragma solidity ^0.8.1;
 
-import { IERC721TokenReceiver } from '../interfaces/IERC721TokenReceiver.sol';
+import {IERC721TokenReceiver} from "../interfaces/IERC721TokenReceiver.sol";
 
 library LibERC721 {
-
     /**
      * @dev Emitted when `tokenId` token is transferred from `from` to `to`.
      */
