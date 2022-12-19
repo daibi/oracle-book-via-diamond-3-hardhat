@@ -1,18 +1,18 @@
 pragma solidity ^0.8.1;
 
-import { Counters } from "@openzeppelin/contracts/utils/Counters.sol";
-import { VRFCoordinatorV2Interface } from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
+import {VRFCoordinatorV2Interface} from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 
-/* 
+/*
  * Storage Slot Defination In a Human Readable Format
- * For an upgradable smart contract, 
+ * For an upgradable smart contract,
  *  it is never TOO cautious on the storage slot distribution
  * This implementation follows the 'AppStorage Pattern' to come up with a more humanreadable storage allocation
- * For detailed information, please refer to 
+ * For detailed information, please refer to
  * https://eip2535diamonds.substack.com/p/appstorage-pattern-for-state-variables?s=w
- * 
+ *
  * For every NEWLY introduced storage, developers should design the storage pattern in AppStorage to have a better accessing performance.
-*/ 
+ */
 
 uint256 constant MAX_FORTUNE_COOKIE_NUM = 3;
 uint256 constant NUMERIC_TRAITS_NUM = 16;
@@ -32,31 +32,22 @@ struct RequestStatus {
  * NFT main character: Faithful
  */
 struct Faithful {
-
     /** owner of this faithful */
     address owner;
-
     /** the hexagram record this faithful has made */
     uint256[] hexagrams;
-
     /** the random number received when this **Faithful** is mint */
     uint256 randomNumber;
-
     /** numeric traits - current only the first three of the slots are effective */
     uint8[NUMERIC_TRAITS_NUM] numericTraits;
-
     /** temporary trait boosts */
     uint8[NUMERIC_TRAITS_NUM] temporaryTraitBoosts;
-
     /** last boost time for every itemId -- it is refreshable */
-    mapping (uint8 => uint40) lastBoostTime;
-
+    mapping(uint8 => uint40) lastBoostTime;
     /** the timestamp of this Faithful minted */
     uint256 mintTime;
-
     /** current status 0=NOT valid, 1=VRF Rending, 2=running */
     uint8 status;
-    
 }
 
 /**
@@ -64,12 +55,26 @@ struct Faithful {
  */
 struct VRFRequestStatus {
     /** whether the request has been successfully fulfilled */
-    bool fulfilled; 
+    bool fulfilled;
     /** whether a requestId exists */
-    bool exists; // 
-    /** For this implementation, 
-      * we only consume the first randomNumber returned from Chainlink, 
-      * therefore, we only record one randomNumber for each request status */
+    bool exists; //
+    /** For this implementation,
+     * we only consume the first randomNumber returned from Chainlink,
+     * therefore, we only record one randomNumber for each request status */
+    uint256 randomNumber;
+}
+
+/**
+ * chainlink VRF request status
+ */
+struct VRFRequestStatus {
+    /** whether the request has been successfully fulfilled */
+    bool fulfilled;
+    /** whether a requestId exists */
+    bool exists; //
+    /** For this implementation,
+     * we only consume the first randomNumber returned from Chainlink,
+     * therefore, we only record one randomNumber for each request status */
     uint256 randomNumber;
 }
 
@@ -78,9 +83,8 @@ struct VRFRequestStatus {
  * May the Hexagram guide you!
  */
 struct Hexagram {
-    
-    /** 
-     * the integer representation of the hexagram result, which can be interpreted as the last 6 binary digits of number 
+    /**
+     * the integer representation of the hexagram result, which can be interpreted as the last 6 binary digits of number
      * For example, for the hexagram:
      * -----
      * -- --
@@ -89,15 +93,12 @@ struct Hexagram {
      * -----
      * -----
      * the integer representation of this hexagram is '0b101111' --> 47
-    */
+     */
     uint8 hexagram;
-
     /** the timestamp this hexagram has generated */
     uint40 generateTime;
-
     /** original query this faithful has made */
     string query;
-
 }
 
 /**
@@ -111,62 +112,53 @@ struct Hexagram {
 struct ItemType {
     /** the name of this item */
     string name;
-
     /** description of this item */
     string description;
-
     /** boost slot */
-    int[NUMERIC_TRAITS_NUM] boostSlot;
+    int256[NUMERIC_TRAITS_NUM] boostSlot;
 }
-
-
 
 /**
  * Common storage for diamond project
  */
 struct AppStorage {
-
     /** Counter for Faithful */
     Counters.Counter faithfulCounter;
-
     /** chainlink subscription initialization flag */
     bool chainlinkInitialized;
-    
     /** Faithful indices */
     mapping(uint256 => Faithful) faithfuls;
-
     /** owner address -> owned Faithful token ids */
     mapping(address => uint256[]) ownerToFaithfulTokenIds;
-
     /** owner address -> tokenId -> tokenId index */
     mapping(address => mapping(uint256 => uint256)) ownerTokenIdIndices;
-
     /** Faithful operational priviledge */
     mapping(uint256 => address) approved;
-
     /** Hexagram indices */
     mapping(uint256 => Hexagram) hexagramRecords;
-
     /** hexagram record ids belonging to Faithful _tokenId */
     mapping(uint256 => uint256[]) faithfulToHexagramRecords;
-
     /** Item type enumeration recorder */
     ItemType[] itemType;
-
+    /** Counter for Items */
+    Counters.Counter itemCounter;
+    /** owner address -> itemIds */
+    mapping(address => uint256[]) ownerItems;
+    /** itemId -> itemSlot */
+    mapping(uint256 => uint256) itemSlot;
+    /** itemId -> owner address */
+    mapping(uint256 => address) itemOwner;
+    /** itemId -> balance */
+    mapping(uint256 => uint256) itemBalance;
     mapping(uint256 => RequestStatus) s_requests; /* requestId --> requestStatus */
-
     /** Version2 VRF coordinator */
     VRFCoordinatorV2Interface COORDINATOR;
-
     /** VRF subscription ID. */
     uint64 s_subscriptionId;
-
     /** VRF Coordinator address - it varies from different blockchain network */
     address vrfCoordinator;
-
     /** VRF keyhash - it varies from different blockchain network */
     bytes32 keyHash;
-
     // Depends on the number of requested values that you want sent to the
     // fulfillRandomWords() function. Storing each word costs about 20,000 gas,
     // so 100,000 is a safe default for this example contract. Test and adjust
@@ -174,13 +166,10 @@ struct AppStorage {
     // and the processing of the callback request in the fulfillRandomWords()
     // function.
     uint32 callbackGasLimit;
-
     // The default is 3, but you can set this higher.
     uint16 requestConfirmations;
-
     // number of rundom number retrieved from chainlink
     uint32 numWords;
-
 }
 
 /**
@@ -188,7 +177,6 @@ struct AppStorage {
  * For detailed information, please refer to: https://eip2535diamonds.substack.com/p/appstorage-pattern-for-state-variables?s=w
  */
 library LibAppStorage {
-
     function diamondStorage() internal pure returns (AppStorage storage ds) {
         assembly {
             ds.slot := 0
@@ -197,8 +185,5 @@ library LibAppStorage {
 }
 
 contract Modifiers {
-
     AppStorage internal s;
-
-
 }

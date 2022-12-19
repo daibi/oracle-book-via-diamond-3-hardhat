@@ -1,41 +1,37 @@
 pragma solidity ^0.8.1;
 
-import { LibAppStorage, AppStorage, Faithful, RequestStatus } from "./LibAppStorage.sol";
-import { LibMath } from "./LibMath.sol";
-import { LibERC721 } from "../../shared/libraries/LibERC721.sol";
-import { LibConstant } from "./LibConstant.sol";
-import { SafeMath } from '@openzeppelin/contracts/utils/math/SafeMath.sol';
+import {LibAppStorage, AppStorage, Faithful, RequestStatus} from "./LibAppStorage.sol";
+import {LibMath} from "./LibMath.sol";
+import {LibERC721} from "../../shared/libraries/LibERC721.sol";
+import {LibConstant} from "./LibConstant.sol";
+import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 /*
  * A 'Faithful' related library layer for common usage
- * 
+ *
  * @author: Ruofan
  */
 library LibFaithful {
-
     event FaithfulRendered(address indexed owner, uint256 indexed tokenId, uint256 indexed requestId);
-    
+
     /**
      * Mint a NEW Faithful.
      * Once minted, this faithful is at VRF-pending status waiting for the VRF received from chainlink
      * ONLY core implementations, facets should implement the prerequisites check & onERC721ReceivedCheck itself
      */
-    function mint(
-        address _to,
-        uint256 _tokenId
-    ) internal {
+    function mint(address _to, uint256 _tokenId) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
         // init a new Faithful
         initNewFaithful(_to, _tokenId);
         // init Faithful indices
         s.ownerToFaithfulTokenIds[_to].push(_tokenId);
         s.ownerTokenIdIndices[_to][_tokenId] = s.ownerToFaithfulTokenIds[_to].length;
-        
+
         emit LibERC721.Transfer(address(0), _to, _tokenId);
     }
 
     /**
-     * Init a new Faithful     
+     * Init a new Faithful
      */
     function initNewFaithful(address _to, uint256 _tokenId) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
@@ -48,7 +44,7 @@ library LibFaithful {
 
     /**
      * Transfer Faithful of <_tokenId> from address <_from> to address <_to>
-     * ONLY logic implementations, facets should implement the prerequisites check & onERC721ReceivedCheck itself 
+     * ONLY logic implementations, facets should implement the prerequisites check & onERC721ReceivedCheck itself
      */
     function transfer(
         address _from,
@@ -56,7 +52,7 @@ library LibFaithful {
         uint256 _tokenId
     ) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        
+
         // remove _from
         uint256 index = s.ownerTokenIdIndices[_from][_tokenId];
         uint256 lastIndex = s.ownerToFaithfulTokenIds[_from].length - 1;
@@ -84,10 +80,10 @@ library LibFaithful {
 
     /**
      * Render this faithful's born attributes
-     * 
+     *
      * A faithful's born attributes are rendered in the following process:
-     * 
-     * 0）PRE: A Faithful has the following attributes, as recorded in numericTraits, currently only the first three slots are effective 
+     *
+     * 0）PRE: A Faithful has the following attributes, as recorded in numericTraits, currently only the first three slots are effective
      *      - SLOT 0: Attack
      *      - SLOT 1: Defense
      *      - SLOT 2: Fortune
@@ -104,7 +100,7 @@ library LibFaithful {
         RequestStatus storage requestStatus = s.s_requests[requestId];
 
         require(requestStatus.exists, "processRandomWord: requestId not exists");
-        
+
         uint256 _tokenId = requestStatus.tokenId;
         s.faithfuls[_tokenId].status = LibConstant.STATUS_RUNNING;
         s.faithfuls[_tokenId].randomNumber = randomWords[0];
