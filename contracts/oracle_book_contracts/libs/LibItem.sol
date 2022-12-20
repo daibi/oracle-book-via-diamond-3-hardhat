@@ -39,9 +39,6 @@ library LibItem {
         uint256 tokenId_,
         uint256 slot_
     ) internal {
-        require(to_ != address(0), "ERC721: mint to the zero address");
-        require(!_exists(tokenId_), "ERC721: token already minted");
-
         AppStorage storage s = LibAppStorage.diamondStorage();
         s.ownerItems[to_].push(tokenId_);
         s.itemOwner[tokenId_] = to_;

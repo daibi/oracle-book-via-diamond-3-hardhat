@@ -12,18 +12,32 @@ contract ItemFacet is Modifiers {
      ***********************/
 
     /**
+     * Get balance of the token
+     */
+    function balanceOf(uint256 tokenId_) public view virtual returns (uint256) {
+        require(LibItem._exists(tokenId_), "ERC3525: balance query for nonexistent token");
+        return s.itemBalance[tokenId_];
+    }
+
+    /**
+     * Get slot of the token
+     */
+    function slotOf(uint256 tokenId_) public view virtual returns (uint256) {
+        require(LibItem._exists(tokenId_), "ERC3525: slot query for nonexistent token");
+        return s.itemSlot[tokenId_];
+    }
+
+    /**
      * Mint an ERC3525 standard item with value
      */
     function mint(
         address to_,
-        uint256 tokenId_,
         uint256 slot_,
         uint256 value_
-    ) internal virtual {
+    ) external payable {
         require(to_ != address(0), "ERC3525: mint to the zero address");
-        require(tokenId_ != 0, "ERC3525: cannot mint zero tokenId");
-        require(!LibItem._exists(tokenId_), "ERC3525: token already minted");
 
+        uint256 tokenId_ = LibItem._getNewTokenId();
         LibItem._mint(to_, tokenId_, slot_);
 
         s.itemBalance[tokenId_] = value_;
@@ -34,18 +48,18 @@ contract ItemFacet is Modifiers {
     /**
      * Transfer ERC3525 standard item to an address
      */
-    function transferFrom(
-        uint256 fromTokenId_,
-        address to_,
-        uint256 value_
-    ) public payable virtual returns (uint256) {
-        uint256 newTokenId = LibItem._getNewTokenId();
+    // function transferFrom(
+    //     uint256 fromTokenId_,
+    //     address to_,
+    //     uint256 value_
+    // ) public payable virtual returns (uint256) {
+    //     uint256 newTokenId = LibItem._getNewTokenId();
 
-        LibItem._mint(to_, newTokenId, s.itemSlot[fromTokenId_]);
-        LibItem._transfer(fromTokenId_, newTokenId, value_);
+    //     LibItem._mint(to_, newTokenId, s.itemSlot[fromTokenId_]);
+    //     LibItem._transfer(fromTokenId_, newTokenId, value_);
 
-        return newTokenId;
-    }
+    //     return newTokenId;
+    // }
 
     /**
      * Transfer ERC3525 standard item to another token

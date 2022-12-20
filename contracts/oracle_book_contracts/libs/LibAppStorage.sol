@@ -65,20 +65,6 @@ struct VRFRequestStatus {
 }
 
 /**
- * chainlink VRF request status
- */
-struct VRFRequestStatus {
-    /** whether the request has been successfully fulfilled */
-    bool fulfilled;
-    /** whether a requestId exists */
-    bool exists; //
-    /** For this implementation,
-     * we only consume the first randomNumber returned from Chainlink,
-     * therefore, we only record one randomNumber for each request status */
-    uint256 randomNumber;
-}
-
-/**
  * Hexagram generated from the Oracal Book
  * May the Hexagram guide you!
  */
