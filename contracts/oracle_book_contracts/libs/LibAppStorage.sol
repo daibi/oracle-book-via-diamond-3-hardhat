@@ -80,7 +80,7 @@ struct VRFRequestStatus {
 struct FortuneCookie {
     
     /** the generation time of this fortune cookie */
-    uint40 generateTime;
+    uint256 generateTime;
 
     /** encrypted data */
     bytes encryptedData;

@@ -6,6 +6,7 @@ import { LibEncryption } from "./LibEncryption.sol";
 import { BytesLib } from "solidity-bytes-utils/contracts/BytesLib.sol";
 import { SafeMath } from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import { LibItem } from "./LibItem.sol";
+import { Counters } from "@openzeppelin/contracts/utils/Counters.sol";
 
 library LibFortuneCookie {
 
@@ -50,13 +51,53 @@ library LibFortuneCookie {
     }
 
     /**
+     * get current id for fortune cookie
+     * 
+     * @return current              current id available
+     */
+    function _currentId() internal view returns (uint256 current) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        current = Counters.current(s.fortuneCookieCounter);
+    }
+
+    /**
+     * increment fortuneCookie counter
+     */
+    function _increment() internal {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        Counters.increment(s.fortuneCookieCounter);
+    }
+
+    /**
      * mint new fortune cookie with encrypted words
+     *  
+     * calldata should combine the following info
+     * 1) encrypted number
+     * 2) provenance hash: combined with following metadata
+     *      - original revealed number
+     *      - chain id
+     *      - decryption key
+     * 
+     * For a detailed info about WHY provenance hash is used, please refer to
+     * https://medium.com/coinmonks/the-elegance-of-the-nft-provenance-hash-solution-823b39f99473
      * 
      * @param _to                   target owner
-     * @param 
+     * @param _data                 encrypted data
      */
-    function mint(address _to, bytes calldata key) internal {
+    function mint(address _to, bytes calldata _data) internal {
+        require(_to != address(0), "FortuneCookie#mint: invalid target address");
+        require(_data.length > 0, "FortuneCookie#mint: empty encrypted data");
 
+        // decode the _data, check if provenance hash exists
+        (bytes memory encryptedNumber, bytes32 provenanceHash) = abi.decode(_data, (bytes, bytes32));
+        
+        require(encryptedNumber.length > 0 && provenanceHash.length > 0, "FortuneCookie#mint: invalid encrypted data");
+
+        // mint the fortune cookie
+        _initNewFortuneCookie(_to, _currentId(), _data);
+        
+        // increment fortune cookie counter
+        _increment();
     }
 
     /**
@@ -153,5 +194,25 @@ library LibFortuneCookie {
         // delete owner record
         delete s.fortuneCookieOwner[_fortuneCookieId];
 
+    }
+
+    /**
+     * Init a new fortune cookie    
+     * 
+     * @param _to               target address
+     * @param _tokenId          current token id
+     * @param _data             extra data 
+     */
+    function _initNewFortuneCookie(address _to, uint256 _tokenId, bytes calldata _data) internal {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        FortuneCookie storage newFortuneCookie = s.fortuneCookies[_currentId()];
+        newFortuneCookie.generateTime = block.timestamp;
+        newFortuneCookie.encryptedData = _data;
+
+        // init owner's collection
+        s.fortuneCookieOwner[_tokenId] = _to;
+
+        s.ownerFortuneCookieIdIndices[_to][_tokenId] = s.ownerToFortuneCookies[_to].length;
+        s.ownerToFortuneCookies[_to].push(_tokenId);
     }
 }
