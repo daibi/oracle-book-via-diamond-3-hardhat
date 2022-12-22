@@ -19,11 +19,13 @@ describe ('FaithfulFacetTest', async function() {
     let ownershipFacet
     let mockVRFCoordinator
     let libERC721Factory
+    let libERC1155Factory
     let libFaithful
 
     before(async function () {
       diamondAddress = await deployDiamond()
       libERC721Factory = await ethers.getContractFactory('LibERC721')
+      libERC1155Factory = await ethers.getContractFactory('LibERC1155')
       libFaithful = await ethers.getContractFactory('LibFaithful')
       mockVRFCoordinator = await deployMockVRFCoordinator()
       diamondCutFacet = await ethers.getContractAt('DiamondCutFacet', diamondAddress)
@@ -35,7 +37,7 @@ describe ('FaithfulFacetTest', async function() {
 
     it('should throw exception when chainlink is not initialized', async () => {      
       const [_, addr1] = await ethers.getSigners();
-      await expect(faithfulFacet.mint(addr1.address)).to.be.revertedWith("MainNFT: chainlink subscription config is not initialized!");
+      await expect(faithfulFacet.mint(addr1.address)).to.be.revertedWith("FaithfulFacet: chainlink subscription config is not initialized!");
     })
     
     // init VRF subscription config first
@@ -67,7 +69,7 @@ describe ('FaithfulFacetTest', async function() {
       // mint execution - for mock, this will only emit RandomWordsRequested event
       const [_, addr1] = await ethers.getSigners();
       await expect(faithfulFacet.mint(addr1.address))
-        .to.emit(libERC721Factory.attach(faithfulFacet.address), 'Transfer').withArgs(ethers.constants.AddressZero, addr1.address, 0)
+        .to.emit(libERC1155Factory.attach(faithfulFacet.address), 'TransferSingle').withArgs(addr1.address, ethers.constants.AddressZero, addr1.address, 0, 1)
         .to.emit(mockVRFCoordinator, 'RandomWordsRequested');
 
       // total supply becomes 1

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.1;
 
+import { LibDiamond } from "../../libraries/LibDiamond.sol";
 import { Counters } from "@openzeppelin/contracts/utils/Counters.sol";
 import { VRFCoordinatorV2Interface } from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 
@@ -188,6 +189,12 @@ struct AppStorage {
     /** time for fortune cookie becomes revealable (ms)*/
     uint64 fortuneCookieMatureTime;
 
+    /** the cycle between address's every fortune cookie query  */
+    uint64 fortuneCookieQueryCooldown;
+
+    /** last fortune cookie query time for every address */
+    mapping(address => uint256) lastFortuneCookieQueryTime;
+
     /** owner address -> itemIds */
     mapping(address => uint8[]) ownerItems;
 
@@ -244,5 +251,28 @@ contract Modifiers {
 
     AppStorage internal s;
 
+    /**
+     * Decoration: should check if fortune cookie config has been initialized 
+     */
+    modifier onlyFortuneCookieInitialized() {
+        require(s.fortuneCookieInitialized, "fortune cookie config should be initialized first!");
+        _;
+    }
+
+    /**
+     * Decoration: should check if the msg.sender is the contract owner
+     */
+    modifier onlyOwner() {
+        LibDiamond.enforceIsContractOwner();
+        _;
+    }
+
+    /**
+     * Decoration: only faithful owners 
+     */
+    modifier onlyFaithfulOwners() {
+        require(s.ownerToFaithfulTokenIds[msg.sender].length > 0, "please get a Faithful first");
+        _;
+    }
 
 }

@@ -11,6 +11,10 @@ contract FaithfulFacet is Modifiers {
 
     uint8 REQUEST_SCENE_MAIN_NFT = 0;
 
+    /***********************
+     *** READ FUNCTIONS **** 
+     ***********************/
+
     /**
      * total supply of currently minted Faithfuls
      */

@@ -7,9 +7,13 @@ import { BytesLib } from "solidity-bytes-utils/contracts/BytesLib.sol";
 import { SafeMath } from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import { LibItem } from "./LibItem.sol";
 import { Counters } from "@openzeppelin/contracts/utils/Counters.sol";
+import { LibERC1155 } from "../../shared/libraries/LibERC1155.sol";
+import { LibConstant } from "./LibConstant.sol";
+
 
 library LibFortuneCookie {
 
+    event FortuneCookieRevealed(address indexed operator, uint256 indexed fortuneCookieId, uint256 decryptedNum);
     
     /**
      * check if given _fortuneCookieId is mature
@@ -19,12 +23,23 @@ library LibFortuneCookie {
      *  @return bool                true: the fortune cookie is ready for revealing
      */
     function mature(uint256 _fortuneCookieId) internal view returns (bool) {
-        
         AppStorage storage s = LibAppStorage.diamondStorage();
+        return remainingTimeForReveal(_fortuneCookieId) >= s.fortuneCookieMatureTime;
+    }
+
+    /**
+     * check the remaining time for fortune cookie of given _fortuneCookieId
+     *
+     * @param _fortuneCookieId      the fortune cookie id
+     * @return uint256              remaining time for given _fortuneCookieId
+     */
+    function remainingTimeForReveal(uint256 _fortuneCookieId) internal view returns (uint256) {
         require(_exists(_fortuneCookieId), "FortuneCookie#timeUp: fortuneCookie doesn't exist");
 
-        return block.timestamp - s.fortuneCookies[_fortuneCookieId].generateTime >= s.fortuneCookieMatureTime;
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        return block.timestamp - s.fortuneCookies[_fortuneCookieId].generateTime;
     }
+     
 
     /**
      * check if given _fortuneCookieId exists
@@ -58,6 +73,27 @@ library LibFortuneCookie {
     function _currentId() internal view returns (uint256 current) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         current = Counters.current(s.fortuneCookieCounter);
+    }
+
+    /**
+     * fortuneCookie's place holder url
+     * 
+     * @return placeHolder          the default url for unlocked fortune cookie
+     */
+    function fortuneCookiePlaceHolder() public pure returns (string memory) {
+        return "https://github.com/daibi/NFT-Breedable-Demo/blob/main/pics/fortunecookie.png?raw=true";
+    }
+
+    /**
+     * query address's last query for fortune cookie time
+     *
+     * @return lastQueryTime        _owner's last query fortunecookie time   
+     */
+    function lastFortuneCookieQueryTime(address _owner) public view returns (uint256 lastQueryTime) {
+        require(_owner != address(0), "lastFortuneCookieQueryTime: invalid address!");
+
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        return s.lastFortuneCookieQueryTime[_owner];
     }
 
     /**
@@ -98,6 +134,9 @@ library LibFortuneCookie {
         
         // increment fortune cookie counter
         _increment();
+
+        // emit event
+        emit LibERC1155.TransferSingle(msg.sender, address(0), _to, LibConstant.FORTUNE_COOKIE, 1);
     }
 
     /**
@@ -109,6 +148,7 @@ library LibFortuneCookie {
     function reveal(uint256 _fortuneCookieId, bytes calldata key) internal {
 
         require(mature(_fortuneCookieId), "FortuneCookie#reveal: fortune cookie check failed");
+        require(_ownerOf(_fortuneCookieId) == msg.sender, "FortuneCookie#reveal: not the owner");
 
         // get the fortune Cookie instance
         AppStorage storage s = LibAppStorage.diamondStorage();
@@ -127,6 +167,8 @@ library LibFortuneCookie {
         // burn this cookie
         burn(_fortuneCookieId);
         
+        // emit event
+        emit FortuneCookieRevealed(msg.sender, _fortuneCookieId, decryptedNum);
     }
 
     /**

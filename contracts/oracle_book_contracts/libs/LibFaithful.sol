@@ -2,7 +2,7 @@ pragma solidity ^0.8.1;
 
 import { LibAppStorage, AppStorage, Faithful, RequestStatus } from "./LibAppStorage.sol";
 import { LibMath } from "./LibMath.sol";
-import { LibERC721 } from "../../shared/libraries/LibERC721.sol";
+import { LibERC1155 } from "../../shared/libraries/LibERC1155.sol";
 import { LibConstant } from "./LibConstant.sol";
 import { SafeMath } from '@openzeppelin/contracts/utils/math/SafeMath.sol';
 
@@ -31,7 +31,7 @@ library LibFaithful {
         s.ownerToFaithfulTokenIds[_to].push(_tokenId);
         s.ownerTokenIdIndices[_to][_tokenId] = s.ownerToFaithfulTokenIds[_to].length;
         
-        emit LibERC721.Transfer(address(0), _to, _tokenId);
+        emit LibERC1155.TransferSingle(msg.sender, address(0), _to, LibConstant.FAITHFUL, 1);
     }
 
     /**
@@ -71,7 +71,6 @@ library LibFaithful {
         // delete operational priviledges
         if (s.approved[_tokenId] != address(0)) {
             delete s.approved[_tokenId];
-            emit LibERC721.Approval(_from, address(0), _tokenId);
         }
 
         // add _tokenId to _to Address's collection
@@ -79,7 +78,8 @@ library LibFaithful {
         s.ownerTokenIdIndices[_to][_tokenId] = s.ownerToFaithfulTokenIds[_to].length;
         s.ownerToFaithfulTokenIds[_to].push(_tokenId);
 
-        emit LibERC721.Transfer(_from, _to, _tokenId);
+        emit LibERC1155.TransferSingle(msg.sender, _from, _to, LibConstant.FAITHFUL, 1);
+
     }
 
     /**
